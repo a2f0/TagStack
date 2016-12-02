@@ -6,14 +6,101 @@
     <script src="https://unpkg.com/react@15/dist/react.js"></script>
     <script src="https://unpkg.com/react-dom@15/dist/react-dom.js"></script>
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/3.6.2/firebase.js"></script>
+    <script src="https://cdn.firebase.com/libs/reactfire/1.0.0/reactfire.min.js"></script>
   </head>
   <body>
     <div id="root"></div>
+    <div class="todoAppContainer">
+      <h2>React + ReactFire</h2>
+      <div id="todoApp3"></div>
+    </div>
+    <script>
+      // Initialize Firebase
+      var config = {
+        apiKey: "AIzaSyDVqodxD0p27pIkRvH_M-Wk8iM-Q1MvxQc",
+        authDomain: "tagstack-21c6b.firebaseapp.com",
+        databaseURL: "https://tagstack-21c6b.firebaseio.com",
+        storageBucket: "tagstack-21c6b.appspot.com",
+        messagingSenderId: "847586578092"
+      };
+      firebase.initializeApp(config);
+    </script>
     <script type="text/babel">
       ReactDOM.render(
        <h1>Hello, world!</h1>,
          document.getElementById('root')
       );
+
+      var TodoList3 = React.createClass({
+        render: function() {
+          var _this = this;
+          var createItem = function(item, index) {
+            return (
+              <li key={ index }>
+                { item.text }
+                <span onClick={ _this.props.removeItem.bind(null, item['.key']) }
+                      style={{ color: 'red', marginLeft: '10px', cursor: 'pointer' }}>
+                  X
+                </span>
+              </li>
+            );
+          };
+          return <ul>{ this.props.items.map(createItem) }</ul>;
+        }
+      });
+
+      var TodoApp3 = React.createClass({
+        mixins: [ReactFireMixin],
+
+        getInitialState: function() {
+          return {
+            items: [],
+            text: ''
+          };
+        },
+
+        componentWillMount: function() {
+          var firebaseRef = firebase.database().ref('todoApp/items');
+          this.bindAsArray(firebaseRef.limitToLast(25), 'items');
+        },
+
+        onChange: function(e) {
+          this.setState({text: e.target.value});
+        },
+
+        removeItem: function(key) {
+          var firebaseRef = firebase.database().ref('todoApp/items');
+          firebaseRef.child(key).remove();
+        },
+
+        handleSubmit: function(e) {
+          e.preventDefault();
+          if (this.state.text && this.state.text.trim().length !== 0) {
+            this.firebaseRefs['items'].push({
+              text: this.state.text
+            });
+            this.setState({
+              text: ''
+            });
+          }
+        },
+
+        render: function() {
+          return (
+            <div>
+              <TodoList3 items={ this.state.items } removeItem={ this.removeItem } />
+              <form onSubmit={ this.handleSubmit }>
+                <input onChange={ this.onChange } value={ this.state.text } />
+                <button>{ 'Add #' + (this.state.items.length + 1) }</button>
+              </form>
+            </div>
+          );
+        }
+      });
+
+      ReactDOM.render(<TodoApp3 />, document.getElementById('todoApp3'));
+
     </script>
   </body>
 </html>
